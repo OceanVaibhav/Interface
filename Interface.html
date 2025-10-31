@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glassmorphism Project Manager</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Font (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load Phosphor Icons (for the + button) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* Apply custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Glassmorphism card style */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Column header dot colors (like in the image) */
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        .dot-backlog { background-color: #EF4444; } /* Red */
+        .dot-inProgress { background-color: #F59E0B; } /* Amber */
+        .dot-review { background-color: #8B5CF6; } /* Violet */
+        .dot-completed { background-color: #10B981; } /* Emerald */
+
+        /* Style for the task card being dragged */
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Style for the column being dragged over */
+        .kanban-column.drag-over {
+            background: rgba(255, 255, 255, 0.15);
+            /* Add a subtle visual cue */
+            outline: 2px dashed rgba(255, 255, 255, 0.3);
+            outline-offset: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 overflow-x-hidden">
+
+    <!-- Background gradient "blobs" for the aurora effect -->
+    <div class="absolute top-0 left-0 w-96 h-96 bg-purple-600 rounded-full opacity-30 filter blur-3xl animate-blob"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-yellow-400 rounded-full opacity-30 filter blur-3xl animate-blob animation-delay-2000"></div>
+    <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full opacity-30 filter blur-3xl animate-blob animation-delay-4000"></div>
+
+    <main class="relative min-h-screen w-full p-4 md:p-8">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-white">Active Tasks</h1>
+                <p class="text-xs text-gray-400 mt-2">Your User ID: <span id="user-id" class="font-mono">loading...</span></p>
+            </div>
+            <button id="open-task-modal" class="flex items-center gap-2 bg-white/10 text-white px-4 py-2 rounded-lg border border-white/20 hover:bg-white/20 transition duration-200">
+                <i class="ph ph-plus text-lg"></i>
+                Add Task
+            </button>
+        </header>
+
+        <!-- Kanban Board -->
+        <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Columns will be injected by JS, but here's the structure -->
+            <!-- 
+            <div class="kanban-column glass-card rounded-xl p-4 flex flex-col" data-status="backlog">
+                <h2 class="text-lg font-semibold text-white mb-4"><span class="dot dot-backlog"></span>Backlog</h2>
+                <div id="col-backlog" class="task-list min-h-[200px] flex-grow space-y-4">
+                    
+                    <div class="task-card glass-card rounded-lg p-4 cursor-grab" draggable="true" data-id="123">
+                        <h3 class="font-semibold text-white">Task Title</h3>
+                        <p class="text-sm text-gray-300 mt-1">Task description...</p>
+                    </div>
+
+                </div>
+            </div>
+            -->
+        </div>
+    </main>
+
+    <!-- Add Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="glass-card rounded-lg shadow-xl p-6 w-full max-w-md">
+            <form id="task-form">
+                <h2 class="text-2xl font-bold text-white mb-4">Add New Task</h2>
+                <div class="mb-4">
+                    <label for="task-title" class="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                    <input type="text" id="task-title" required class="w-full p-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                </div>
+                <div class="mb-4">
+                    <label for="task-description" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                    <textarea id="task-description" rows="3" class="w-full p-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400"></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="close-task-modal" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">Cancel</button>
+                    <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500 transition">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Message Modal (for errors) -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50">
+        <div class="glass-card rounded-lg shadow-xl p-6 max-w-sm w-full">
+            <h3 id="message-title" class="text-xl font-bold text-white">Message</h3>
+            <p id="message-text" class="text-gray-300 mt-2"></p>
+            <button id="message-close" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-500">
+                Close
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, collection, addDoc, setDoc, deleteDoc, 
+            onSnapshot, serverTimestamp, setLogLevel, updateDoc
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL VARIABLES ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth, userId, tasksColRef;
+        let unsubscribeTasks = null;
+        
+        // Kanban Columns
+        const COLUMNS = [
+            { id: 'backlog', title: 'Backlog', color: 'dot-backlog' },
+            { id: 'inProgress', title: 'In Progress', color: 'dot-inProgress' },
+            { id: 'review', title: 'Review', color: 'dot-review' },
+            { id: 'completed', title: 'Completed', color: 'dot-completed' }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const kanbanBoard = document.getElementById('kanban-board');
+        const userIdSpan = document.getElementById('user-id');
+        
+        // Task Modal Elements
+        const taskModal = document.getElementById('task-modal');
+        const openTaskModalBtn = document.getElementById('open-task-modal');
+        const closeTaskModalBtn = document.getElementById('close-task-modal');
+        const taskForm = document.getElementById('task-form');
+        const taskTitleInput = document.getElementById('task-title');
+        const taskDescriptionInput = document.getElementById('task-description');
+        
+        // Message Modal Elements
+        const messageModal = document.getElementById('message-modal');
+        const messageTitle = document.getElementById('message-title');
+        const messageText = document.getElementById('message-text');
+        const messageClose = document.getElementById('message-close');
+
+        // --- MODAL FUNCTIONS ---
+        
+        function showMessage(title, text) {
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            messageModal.classList.remove('hidden');
+        }
+        messageClose.addEventListener('click', () => messageModal.classList.add('hidden'));
+
+        function showTaskModal() {
+            taskModal.classList.remove('hidden');
+        }
+        function closeTaskModal() {
+            taskForm.reset();
+            taskModal.classList.add('hidden');
+        }
+        openTaskModalBtn.addEventListener('click', showTaskModal);
+        closeTaskModalBtn.addEventListener('click', closeTaskModal);
+
+        // --- KANBAN SETUP ---
+        
+        /**
+         * Initializes the Kanban board columns.
+         */
+        function initializeBoard() {
+            kanbanBoard.innerHTML = ''; // Clear board
+            
+            for (const column of COLUMNS) {
+                const columnEl = document.createElement('div');
+                columnEl.className = 'kanban-column glass-card rounded-xl p-4 flex flex-col';
+                columnEl.dataset.status = column.id;
+                
+                columnEl.innerHTML = `
+                    <h2 class="text-lg font-semibold text-white mb-4">
+                        <span class="dot ${column.color}"></span>
+                        ${column.title}
+                    </h2>
+                    <div id="col-${column.id}" class="task-list min-h-[200px] flex-grow space-y-4">
+                        <!-- Tasks go here -->
+                    </div>
+                `;
+                kanbanBoard.appendChild(columnEl);
+            }
+            
+            // Add drag-and-drop listeners to columns
+            addDragDropListeners();
+        }
+
+        // --- FIREBASE & APP LOGIC ---
+
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug');
+                setupAuthListener();
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showMessage("Initialization Error", "Could not connect. Please refresh.");
+            }
+        }
+
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdSpan.textContent = userId;
+                    tasksColRef = collection(db, 'artifacts', appId, 'users', userId, 'tasks');
+                    
+                    if (unsubscribeTasks) unsubscribeTasks();
+                    listenForTasks();
+
+                } else {
+                    await signIn();
+                }
+            });
+        }
+
+        async function signIn() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication error:", error);
+                showMessage("Auth Error", "Could not sign in.");
+            }
+        }
+
+        function listenForTasks() {
+            if (!tasksColRef) return;
+
+            unsubscribeTasks = onSnapshot(tasksColRef, (snapshot) => {
+                const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Create a map to hold tasks for each column
+                const tasksByColumn = {};
+                COLUMNS.forEach(col => tasksByColumn[col.id] = []);
+                
+                tasks.forEach(task => {
+                    // Ensure task has a valid status, default to 'backlog'
+                    if (task.status && tasksByColumn[task.status]) {
+                        tasksByColumn[task.status].push(task);
+                    } else {
+                        tasksByColumn['backlog'].push(task);
+                    }
+                });
+
+                // Sort tasks within each column (e.g., by creation time)
+                for (const colId in tasksByColumn) {
+                    tasksByColumn[colId].sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                }
+                
+                // Render tasks in their respective columns
+                COLUMNS.forEach(col => renderColumn(col.id, tasksByColumn[col.id]));
+
+            }, (error) => {
+                console.error("Error listening for tasks:", error);
+                showMessage("Database Error", "Failed to load tasks.");
+            });
+        }
+        
+        /**
+         * Renders all tasks for a specific column.
+         * @param {string} status - The status (column ID) to render.
+         * @param {Array} tasks - Array of task objects for this column.
+         */
+        function renderColumn(status, tasks) {
+            const columnEl = document.getElementById(`col-${status}`);
+            if (!columnEl) return;
+            
+            columnEl.innerHTML = ''; // Clear column
+            
+            if (tasks.length === 0) {
+                // Optional: Show an empty state
+                // columnEl.innerHTML = `<p class="text-sm text-gray-400 text-center">No tasks</p>`;
+            } else {
+                tasks.forEach(task => {
+                    const taskCard = createTaskCard(task);
+                    columnEl.appendChild(taskCard);
+                });
+            }
+        }
+
+        /**
+         * Creates a DOM element for a single task card.
+         * @param {object} task - The task object from Firestore.
+         * @returns {HTMLElement} - The task card element.
+         */
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card glass-card rounded-lg p-4 cursor-grab';
+            card.draggable = true;
+            card.dataset.id = task.id;
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h3 class="font-semibold text-white">${escapeHTML(task.title)}</h3>
+                    <button class="delete-btn text-gray-400 hover:text-red-500 transition" data-id="${task.id}" aria-label="Delete task">
+                        <i class="ph ph-trash text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-300 mt-1">${escapeHTML(task.description)}</p>
+            `;
+            
+            // Add drag listener to the card itself
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            
+            // Add delete listener
+            card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent drag from starting
+                deleteTask(task.id);
+            });
+            
+            return card;
+        }
+        
+        /**
+         * Handles adding a new task from the modal.
+         */
+        async function handleAddTask(e) {
+            e.preventDefault();
+            const title = taskTitleInput.value.trim();
+            const description = taskDescriptionInput.value.trim();
+            
+            if (!title) {
+                showMessage("Invalid Input", "Task title cannot be empty.");
+                return;
+            }
+            
+            try {
+                await addDoc(tasksColRef, {
+                    title: title,
+                    description: description,
+                    status: 'backlog', // Always add to backlog first
+                    createdAt: serverTimestamp()
+                });
+                closeTaskModal();
+            } catch (error) {
+                console.error("Error adding task:", error);
+                showMessage("Error", "Could not add task.");
+            }
+        }
+        taskForm.addEventListener('submit', handleAddTask);
+
+        /**
+         * Deletes a task.
+         * @param {string} id - The document ID of the task to delete.
+         */
+        async function deleteTask(id) {
+            // No confirmation for speed, but you could add a modal here
+            try {
+                const taskDocRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', id);
+                await deleteDoc(taskDocRef);
+            } catch (error) {
+                console.error("Error deleting task:", error);
+                showMessage("Error", "Could not delete task.");
+            }
+        }
+
+        // --- DRAG & DROP FUNCTIONS ---
+        
+        let draggedItem = null;
+        
+        function handleDragStart(e) {
+            draggedItem = this; // 'this' is the card being dragged
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id);
+        }
+        
+        function handleDragEnd() {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+            }
+            draggedItem = null;
+            
+            // Remove all drag-over classes
+            document.querySelectorAll('.kanban-column.drag-over').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+        }
+        
+        function addDragDropListeners() {
+            const columns = document.querySelectorAll('.kanban-column');
+            columns.forEach(column => {
+                column.addEventListener('dragover', handleDragOver);
+                column.addEventListener('dragleave', handleDragLeave);
+                column.addEventListener('drop', handleDrop);
+            });
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow dropping
+            this.classList.add('drag-over');
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragLeave() {
+            this.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            const taskId = e.dataTransfer.getData('text/plain');
+            const newStatus = this.dataset.status;
+            
+            if (taskId && newStatus) {
+                // Update the task in Firestore
+                try {
+                    const taskDocRef = doc(db, 'artifacts', appId, 'users', userId, 'tasks', taskId);
+                    await updateDoc(taskDocRef, {
+                        status: newStatus
+                    });
+                } catch (error) {
+                    console.error("Error updating task status:", error);
+                    showMessage("Error", "Could not move task.");
+                }
+            }
+        }
+        
+        // --- UTILITY ---
+        function escapeHTML(str) {
+            return (str || '').replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m];
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeBoard(); // Set up the column structure
+            initializeFirebase(); // Connect to Firebase and get data
+        });
+
+    </script>
+</body>
+</html>
