@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hogwarts Dashboard v5 (Glassy)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* STATIC GRADIENT BACKGROUND */
+            background-color: #0F172A; /* Fallback color */
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(147, 51, 234, 0.2), transparent 70%), /* Purple blob */
+                radial-gradient(at 80% 30%, rgba(59, 130, 246, 0.2), transparent 70%),  /* Blue blob */
+                radial-gradient(at 50% 80%, rgba(245, 158, 11, 0.15), transparent 70%); /* Gold/Amber blob */
+            background-attachment: fixed; /* Keeps gradient in place */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        
+        /* --- MODIFIED FOR GLASSY LOOK --- */
+        .nav-bar {
+            background-color: rgba(30, 41, 59, 0.7); /* Slate 800 @ 70% */
+            border-bottom: 1px solid #334155;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* --- MODIFIED FOR GLASSY LOOK --- */
+        .button-bar {
+            background-color: rgba(15, 23, 42, 0.7); /* Slate 900 @ 70% */
+            border-bottom: 1px solid #334155;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .nav-btn {
+            color: #CBD5E1;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        .nav-btn:hover {
+            background-color: #F59E0B;
+            color: #000000;
+        }
+        .nav-btn-active {
+            background-color: #F59E0B;
+            color: #000000;
+            font-weight: 600;
+        }
+        
+        /* --- MODIFIED FOR GLASSY LOOK --- */
+        .dash-card {
+            background-color: rgba(30, 41, 59, 0.6); /* Slate 800 @ 60% */
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* --- MODIFIED FOR GLASSY LOOK --- */
+        .quick-link {
+            background-color: rgba(51, 65, 85, 0.5); /* Slate 700 @ 50% */
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Faint border */
+        }
+        .quick-link:hover {
+            transform: translateY(-4px);
+            background-color: #F59E0B;
+            color: #000000;
+            box-shadow: 0 6px 15px rgba(245, 158, 11, 0.2);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen flex flex-col">
+
+    <nav class="nav-bar p-3 flex items-center justify-between text-white shadow-lg sticky top-0 z-50">
+        <div class="flex items-center space-x-2">
+            <i class="ph ph-shield-chevron text-3xl text-amber-400"></i>
+            <span class="text-lg font-bold" style="font-family: 'Merriweather', serif;">HOGWARTS</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="hidden md:flex items-center space-x-4 text-xs">
+                <span>Theme: <span class="font-semibold text-gray-300">Dark</span></span>
+                <span>Font size: <span class="font-semibold text-gray-300">11</span></span>
+                <span>Language: <span class="font-semibold text-gray-300">English</span></span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="font-semibold text-sm hidden sm:block">BF Empire</span>
+                <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-lg font-semibold border-2 border-white">
+                    <i class="ph ph-user text-black"></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="button-bar p-3 flex flex-wrap justify-center gap-2 shadow-lg sticky top-[68px] z-40">
+        <a href="#dashboard" class="nav-btn nav-btn-active text-xs">DASHBOARD</a>
+        <a href="index.html.html" class="nav-btn text-xs">CREATE TASK</a>
+        <a href="#my-task" class="nav-btn text-xs">MY TASK</a>
+        <a href="#team" class="nav-btn text-xs">TEAM MANAGER</a>
+        <a href="#report" class="nav-btn text-xs">REPORT</a>
+        <a href="#events" class="nav-btn text-xs">EVENTS</a>
+        <a href="#join" class="nav-btn text-xs">JOIN WITH US</a>
+    </div>
+
+    <div class="bg-gray-900 text-gray-400 text-center text-xs py-1 shadow-inner flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+        <div class="flex items-center gap-1.5">
+            <i class="ph ph-phone"></i>
+            <span>Support: +91-6297223061</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <i class="ph ph-envelope"></i>
+            <span>Abhik@gmail.com</span>
+        </div>
+    </div>
+
+    <div class="relative z-0 flex-grow p-4 md:p-8">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <div class="dash-card p-6">
+                    <h1 class="text-3xl font-bold text-white">Welcome back, Kejriwal!</h1>
+                    <p class="mt-2 text-gray-300">You have 3 active tasks and 1 upcoming event today.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="dash-card p-4">
+                        <h3 class="text-sm font-medium text-gray-400">Active Tasks</h3>
+                        <p class="text-3xl font-bold text-white mt-2">3</p>
+                    </div>
+                    <div class="dash-card p-4">
+                        <h3 class="text-sm font-medium text-gray-400">Team Members</h3>
+                        <p class="text-3xl font-bold text-white mt-2">8</p>
+                    </div>
+                    <div class="dash-card p-4">
+                        <h3 class="text-sm font-medium text-gray-400">Pending Reviews</h3>
+                        <p class="text-3xl font-bold text-white mt-2">1</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card p-6 lg:col-span-1">
+                <h2 class="text-xl font-semibold text-white mb-4">Quick Links</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    
+                    <a href="#team" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-users text-4xl mb-2"></i>
+                        <span class="text-sm font-medium">Team</span>
+                    </a>
+                    
+                    <a href="#my-task" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-user-list text-4xl mb-2"></i>
+                        <span class="text-sm font-medium">My Tasks</span>
+                    </a>
+                    
+                    <a href="#report" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-chart-line text-4xl mb-2"></i>
+                        <span class="text-sm font-medium">Reports</span>
+                    </a>
+                    
+                    <a href="#events" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-calendar text-4xl mb-2"></i>
+                        <span class="text-sm font-medium">Events</span>
+                    </a>
+                    
+                     <a href="#create" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-plus-circle text-4xl mb-2"></i>
+                        <span classf="text-sm font-medium">New Task</span>
+                    </a>
+                    
+                    <a href="#join" class="quick-link p-4 flex flex-col items-center justify-center text-gray-300">
+                        <i class="ph ph-handshake text-4xl mb-2"></i>
+                        <span class="text-sm font-medium">Join Us</span>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
